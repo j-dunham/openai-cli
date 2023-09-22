@@ -6,7 +6,12 @@ This is a command-line interface (CLI) for OpenAI's ChatGPT API. It allows you t
 
 To install the OpenAI CLI, you need to have Go installed on your machine. Then, run the following command:
 
+## Setup
+1) Create a OpenAI API token at https://platform.openai.com/account/api-keys
+2) Create a `.env` file using the `.env.template` file and set `OPEN_AI_TOKEN` to the generated token for step 1
+
 ## Usage
+
 ```console
 go run . "<PROMPT HERE>" 
 ```
