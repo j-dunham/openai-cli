@@ -1,6 +1,6 @@
 # OpenAI CLI
 
-This is a command-line interface (CLI) for OpenAI's GPT-3 API. It allows you to interact with the API from your terminal, without needing to use a web browser.
+This is a command-line interface (CLI) for OpenAI's ChatGPT API. It allows you to interact with the API from your terminal, without needing to use a web browser.
 
 ## Installation
 
