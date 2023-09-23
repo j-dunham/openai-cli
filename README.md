@@ -18,9 +18,9 @@ go run . "<PROMPT HERE>"
 
 Example output
 ```console
-===========: Prompt :=================
-What is ChatGPT?
-===========: Response :===============
-ChatGPT is a language model developed by OpenAI. It is designed to generate detailed and coherent responses in a conversational manner. It can be used to create chatbots, virtual assistants, and other conversational agents. ChatGPT uses a variant of the GPT-3 model and has been trained on a large corpus of diverse internet text. It can understand and generate text in multiple languages and can perform a wide range of tasks such as answering questions, providing explanations, giving recommendations, and
-===========: Done :===================
+Prompt:
+What is ChatGPT? 
+
+Response:
+ChatGPT is an advanced language model developed by OpenAI. It uses deep learning techniques to generate human-like responses in natural language conversations. ChatGPT is trained using a method called Reinforcement Learning from Human Feedback (RLHF), where human AI trainers provide responses and rank different model-generated alternatives. This training process helps ChatGPT improve its responses over time. It can be used for a variety of tasks like drafting content, answering questions, creating conversational agents, and more.
 ```
