@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	
 	"github.com/j-dunham/openai-cli/util"
 	"github.com/fatih/color"
@@ -46,10 +47,21 @@ type Response struct {
 }
 
 func createRequestData(prompt string) ([]byte, error) {
+	maxTokens, err := strconv.Atoi(os.Getenv("OPEN_AI_MAX_TOKENS"))
+	if err != nil {
+		return nil, err
+	}
+
+	temperatureStr := os.Getenv("OPEN_AI_TEMPERATURE")
+	temperature, err := strconv.ParseFloat(temperatureStr, 64)
+	if err != nil {
+		return nil, err
+	}
+
 	data := Data{
-		Model:       "gpt-3.5-turbo",
-		MaxTokens:   100,
-		Temperature: 0.9,
+		Model:       os.Getenv("OPEN_AI_MODEL"),
+		MaxTokens:   maxTokens,
+		Temperature: temperature,
 		Messages:    []Message{{Role: "user", Content: prompt}},
 	}
 
