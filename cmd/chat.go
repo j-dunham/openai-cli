@@ -7,8 +7,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-
+	
+	"github.com/j-dunham/openai-cli/util"
 	"github.com/fatih/color"
+
 )
 
 type Message struct {
@@ -81,10 +83,12 @@ func printResponse(prompt string, response http.Response){
 	blue := color.New(color.FgBlue).PrintlnFunc()
 	green := color.New(color.FgGreen).PrintlnFunc()
 
-	blue("Prompt:")
-	green(prompt, "\n")
-	blue("Response:")
-	green(resp.Choices[0].Message.Content)
+	fmt.Println("====================================")
+	blue("| Prompt:")
+	green("| ", prompt)
+	blue("| Response:")
+	green("| ", util.WrapText(resp.Choices[0].Message.Content, 100, "|  "))
+	fmt.Println("====================================")
 }
 
 func Execute(prompt string) {
