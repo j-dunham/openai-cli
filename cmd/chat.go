@@ -74,7 +74,7 @@ func createRequest(prompt string) (*http.Request, error) {
 	return req, nil
 }
 
-func printResponse(response http.Response){
+func printResponse(prompt string, response http.Response){
 	body, _ := io.ReadAll(response.Body)
 	var resp Response
 	json.Unmarshal(body, &resp)
@@ -82,7 +82,7 @@ func printResponse(response http.Response){
 	green := color.New(color.FgGreen).PrintlnFunc()
 
 	blue("Prompt:")
-	green(os.Args[1], "\n")
+	green(prompt, "\n")
 	blue("Response:")
 	green(resp.Choices[0].Message.Content)
 }
@@ -96,5 +96,5 @@ func Execute(prompt string) {
 		return
 	}
 	defer resp.Body.Close()
-	printResponse(*resp)
+	printResponse(prompt, *resp)
 }
