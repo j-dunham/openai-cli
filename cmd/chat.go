@@ -33,8 +33,8 @@ type Response struct {
 	Choices   []struct {
 		Index        int `json:"index"`
 		Message      struct {
-				Role    string `json:"role"`
-				Content string `json:"content"`
+			Role    string `json:"role"`
+			Content string `json:"content"`
 		} `json:"message"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
@@ -107,7 +107,7 @@ func Execute(prompt string) {
 	req, _ := createRequest(prompt)
 
 	done := make(chan bool)
-  go util.LoadingAnimation("thinking", done)
+    go util.LoadingAnimation("thinking", done)
 
 	resp, err := client.Do(req)
 	if err != nil {
