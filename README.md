@@ -16,13 +16,8 @@ Example output
 ```console
 ====================================
 | Prompt:
-|  What is ChatGPT?
+|  Tell me a joke about a software developer?
 | Response:
-|  ChatGPT is a language model developed by OpenAI. It is designed to generate human-like text 
-|  responses given a prompt or a conversation. It is trained using Reinforcement Learning from Human 
-|  Feedback (RLHF), combining both supervised fine-tuning and reinforcement learning. ChatGPT is 
-|  capable of engaging in conversations on a wide range of topics, providing detailed responses based 
-|  on the input it receives. It has been trained with a diverse dataset from the internet, but it may 
-|  sometimes produce incorrect or nonsensical 
+|  Why don't software developers like nature? Because there are too many bugs! 
 ====================================
 ```
