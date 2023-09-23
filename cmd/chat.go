@@ -9,9 +9,8 @@ import (
 	"os"
 	"strconv"
 	
-	"github.com/j-dunham/openai-cli/util"
 	"github.com/fatih/color"
-
+	"github.com/j-dunham/openai-cli/util"
 )
 
 type Message struct {
@@ -106,11 +105,18 @@ func printResponse(prompt string, response http.Response){
 func Execute(prompt string) {
 	client := &http.Client{}
 	req, _ := createRequest(prompt)
+
+	done := make(chan bool)
+  go util.LoadingAnimation("thinking", done)
+
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
-		return
+			fmt.Println("Error sending request:", err)
+			return
 	}
 	defer resp.Body.Close()
+
+	// Stop the loading animation
+	done <- true
 	printResponse(prompt, *resp)
 }
