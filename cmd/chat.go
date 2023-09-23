@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	
+
 	"github.com/fatih/color"
 	"github.com/j-dunham/openai-cli/util"
 )
@@ -31,17 +31,17 @@ type Response struct {
 	Created   int    `json:"created"`
 	Model     string `json:"model"`
 	Choices   []struct {
-			Index        int `json:"index"`
-			Message      struct {
-					Role    string `json:"role"`
-					Content string `json:"content"`
-			} `json:"message"`
-			FinishReason string `json:"finish_reason"`
+		Index        int `json:"index"`
+		Message      struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+		} `json:"message"`
+		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
 	Usage struct {
-			PromptTokens     int `json:"prompt_tokens"`
-			CompletionTokens int `json:"completion_tokens"`
-			TotalTokens      int `json:"total_tokens"`
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
 }
 
@@ -111,8 +111,8 @@ func Execute(prompt string) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-			fmt.Println("Error sending request:", err)
-			return
+		fmt.Println("Error sending request:", err)
+		return
 	}
 	defer resp.Body.Close()
 
