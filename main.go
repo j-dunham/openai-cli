@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 
 	"github.com/j-dunham/openai-cli/cmd"
 	"github.com/joho/godotenv"
@@ -15,7 +15,7 @@ func main() {
 		return
 	}
 	prompt := flag.String("prompt", "", "The prompt to ask ChatGPT.")
-    flag.Parse()
+	flag.Parse()
 	if *prompt == "" {
 		fmt.Println("You must provide a prompt to ask ChatGPT.")
 		return

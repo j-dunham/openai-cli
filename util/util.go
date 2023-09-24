@@ -1,8 +1,8 @@
 package util
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -29,7 +29,7 @@ func WrapText(text string, lineWidth int, prefix string) string {
 		return text
 	}
 
-	wrapped := ""
+	wrapped := prefix
 	lineLen := 0
 	for _, word := range words {
 		if lineLen+len(word) > lineWidth {

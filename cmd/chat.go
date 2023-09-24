@@ -26,13 +26,13 @@ type Data struct {
 }
 
 type Response struct {
-	ID        string `json:"id"`
-	Object    string `json:"object"`
-	Created   int    `json:"created"`
-	Model     string `json:"model"`
-	Choices   []struct {
-		Index        int `json:"index"`
-		Message      struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	Created int    `json:"created"`
+	Model   string `json:"model"`
+	Choices []struct {
+		Index   int `json:"index"`
+		Message struct {
 			Role    string `json:"role"`
 			Content string `json:"content"`
 		} `json:"message"`
@@ -87,7 +87,7 @@ func createRequest(prompt string) (*http.Request, error) {
 	return req, nil
 }
 
-func printResponse(prompt string, response http.Response){
+func printResponse(prompt string, response http.Response) {
 	body, _ := io.ReadAll(response.Body)
 	var resp Response
 	json.Unmarshal(body, &resp)
@@ -98,7 +98,7 @@ func printResponse(prompt string, response http.Response){
 	blue("| Prompt:")
 	green("| ", prompt)
 	blue("| Response:")
-	green("| ", util.WrapText(resp.Choices[0].Message.Content, 100, "|  "))
+	green(util.WrapText(resp.Choices[0].Message.Content, 100, "|  "))
 	fmt.Println("====================================")
 }
 
@@ -107,7 +107,7 @@ func Execute(prompt string) {
 	req, _ := createRequest(prompt)
 
 	done := make(chan bool)
-    go util.LoadingAnimation("thinking", done)
+	go util.LoadingAnimation("thinking", done)
 
 	resp, err := client.Do(req)
 	if err != nil {
