@@ -9,7 +9,7 @@ This is a command-line interface (CLI) for OpenAI's ChatGPT API. It allows you t
 ## Usage
 
 ```console
-go run . "<PROMPT HERE>" 
+go run . -prompt "<PROMPT HERE>" 
 ```
 
 Example output

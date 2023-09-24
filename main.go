@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"flag"
 
 	"github.com/j-dunham/openai-cli/cmd"
 	"github.com/joho/godotenv"
@@ -14,6 +14,12 @@ func main() {
 		fmt.Println("Error loading .env file:", err)
 		return
 	}
+	prompt := flag.String("prompt", "", "The prompt to ask ChatGPT.")
+    flag.Parse()
+	if *prompt == "" {
+		fmt.Println("You must provide a prompt to ask ChatGPT.")
+		return
+	}
 
-	cmd.Execute(os.Args[1])
+	cmd.Execute(*prompt)
 }
