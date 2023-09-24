@@ -17,21 +17,21 @@ func TestWrapText(t *testing.T) {
 			text:      "Hello, world!",
 			lineWidth: 8,
 			prefix:    "",
-			want:      "Hello, \nworld! ",
+			want:      "Hello,\nworld!",
 		},
 		{
 			name:      "WrapText wraps text correctly with prefix",
 			text:      "Hello, world!",
 			lineWidth: 8,
 			prefix:    "|",
-			want:      "|Hello, \n|world! ",
+			want:      "|Hello,\n|world!",
 		},
 		{
 			name:      "WrapText wraps text correctly for a single line",
 			text:      "Hello, world!",
 			lineWidth: 80,
 			prefix:    "|",
-			want:      "|Hello, world! ",
+			want:      "|Hello, world!",
 		},
 	}
 

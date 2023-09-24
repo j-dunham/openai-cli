@@ -33,12 +33,12 @@ func WrapText(text string, lineWidth int, prefix string) string {
 	lineLen := 0
 	for _, word := range words {
 		if lineLen+len(word) > lineWidth {
-			wrapped += "\n" + prefix
+
+			wrapped = strings.TrimSpace(wrapped) + "\n" + prefix
 			lineLen = 0
 		}
 		wrapped += word + " "
 		lineLen += len(word) + 1
 	}
-
-	return wrapped
+	return strings.TrimSpace(wrapped)
 }
