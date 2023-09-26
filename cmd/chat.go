@@ -87,10 +87,15 @@ func createRequest(prompt string) (*http.Request, error) {
 	return req, nil
 }
 
-func printResponse(prompt string, response http.Response) {
-	body, _ := io.ReadAll(response.Body)
+func parseResponse(res http.Response) Response {
+	body, _ := io.ReadAll(res.Body)
 	var resp Response
 	json.Unmarshal(body, &resp)
+	return resp
+}
+
+func printResponse(prompt string, response Response) {
+
 	blue := color.New(color.FgBlue).PrintlnFunc()
 	green := color.New(color.FgGreen).PrintlnFunc()
 
@@ -98,11 +103,11 @@ func printResponse(prompt string, response http.Response) {
 	blue("| Prompt:")
 	green("| ", prompt)
 	blue("| Response:")
-	green(util.WrapText(resp.Choices[0].Message.Content, 100, "|  "))
+	green(util.WrapText(response.Choices[0].Message.Content, 100, "|  "))
 	fmt.Println("====================================")
 }
 
-func Execute(prompt string) {
+func Execute(prompt string, save bool) {
 	client := &http.Client{}
 	req, _ := createRequest(prompt)
 
@@ -115,8 +120,12 @@ func Execute(prompt string) {
 		return
 	}
 	defer resp.Body.Close()
-
+	response := parseResponse(*resp)
 	// Stop the loading animation
 	done <- true
-	printResponse(prompt, *resp)
+	if save {
+		util.CreateTable()
+		util.InsertPrompt(prompt, response.Choices[0].Message.Content)
+	}
+	printResponse(prompt, response)
 }

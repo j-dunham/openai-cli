@@ -1,2 +1,4 @@
 .env
 **/**/openai-cli
+*.db
+*.sqlite

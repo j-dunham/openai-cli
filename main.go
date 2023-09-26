@@ -3,10 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-
 	"github.com/j-dunham/openai-cli/cmd"
 	"github.com/joho/godotenv"
+	"os"
 )
 
 func main() {
@@ -16,11 +15,13 @@ func main() {
 		os.Exit(1)
 	}
 	prompt := flag.String("prompt", "", "The prompt to ask ChatGPT.")
+	save := flag.Bool("save", false, "Save the prompt and response to the database.")
+
 	flag.Parse()
 	if *prompt == "" {
 		fmt.Println("You must provide a prompt to ask ChatGPT.")
 		os.Exit(2)
 	}
 
-	cmd.Execute(*prompt)
+	cmd.Execute(*prompt, *save)
 }
