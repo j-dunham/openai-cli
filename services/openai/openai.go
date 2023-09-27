@@ -1,4 +1,4 @@
-package cmd
+package openai
 
 import (
 	"bytes"
@@ -91,7 +91,7 @@ func parseResponse(prompt string, response http.Response) string {
 	return resp.Choices[0].Message.Content
 }
 
-func Execute(prompt string) string {
+func GetCompletion(prompt string) string {
 	client := &http.Client{}
 	req, _ := createRequest(prompt)
 	resp, err := client.Do(req)

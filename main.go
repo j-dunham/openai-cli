@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/j-dunham/openai-cli/cmd"
+	"github.com/j-dunham/openai-cli/services/openai"
 	"github.com/joho/godotenv"
 	"github.com/muesli/reflow/wordwrap"
 )
@@ -96,8 +96,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			wrappedPrompt := wordwrap.String(m.textarea.Value(), 50)
 			m.messages = append(m.messages, m.senderStyle.Render("You: ")+wrappedPrompt)
 			m.viewport.SetContent(strings.Join(m.messages, "\n"))
-			
-			response := cmd.Execute(m.textarea.Value())
+
+			response := openai.GetCompletion(m.textarea.Value())
 			wrappedResponse := wordwrap.String(response, 50)
 			m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(wrappedResponse)+"\n")
 
@@ -112,7 +112,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return m, tea.Batch(tiCmd, vpCmd)
 }
-
 
 func (m model) View() string {
 	return fmt.Sprintf(
