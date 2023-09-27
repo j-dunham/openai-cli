@@ -3,14 +3,11 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+
 	"io"
 	"net/http"
 	"os"
 	"strconv"
-
-	"github.com/fatih/color"
-	"github.com/j-dunham/openai-cli/util"
 )
 
 type Message struct {
@@ -87,36 +84,23 @@ func createRequest(prompt string) (*http.Request, error) {
 	return req, nil
 }
 
-func printResponse(prompt string, response http.Response) {
+func parseResponse(prompt string, response http.Response) string {
 	body, _ := io.ReadAll(response.Body)
 	var resp Response
 	json.Unmarshal(body, &resp)
-	blue := color.New(color.FgBlue).PrintlnFunc()
-	green := color.New(color.FgGreen).PrintlnFunc()
-
-	fmt.Println("====================================")
-	blue("| Prompt:")
-	green("| ", prompt)
-	blue("| Response:")
-	green(util.WrapText(resp.Choices[0].Message.Content, 100, "|  "))
-	fmt.Println("====================================")
+	return resp.Choices[0].Message.Content
 }
 
-func Execute(prompt string) {
+func Execute(prompt string) string {
 	client := &http.Client{}
 	req, _ := createRequest(prompt)
-
-	done := make(chan bool)
-	go util.LoadingAnimation("thinking", done)
-
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
-		return
+		return err.Error()
 	}
 	defer resp.Body.Close()
 
 	// Stop the loading animation
-	done <- true
-	printResponse(prompt, *resp)
+	answer := parseResponse(prompt, *resp)
+	return answer
 }
