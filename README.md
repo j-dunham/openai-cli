@@ -14,10 +14,16 @@ go run . -prompt "<PROMPT HERE>"
 
 Example output
 ```console
-====================================
-| Prompt:
-|  Tell me a joke about a software developer?
-| Response:
-|  Why don't software developers like nature? Because there are too many bugs! 
-====================================
+You: Tell me a joke about developers?      
+OpenAI: Why do developers prefer dark mode?
+                                           
+Because light attracts bugs!               
+                                           
+                                           
+                                                                              
+
+┃ What is your Prompt?                         
+┃                                              
+
+
 ```
