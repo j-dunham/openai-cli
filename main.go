@@ -1,8 +1,5 @@
 package main
 
-// A simple program demonstrating the text area component from the Bubbles
-// component library.
-
 import (
 	"fmt"
 	"log"
@@ -15,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/j-dunham/openai-cli/cmd"
 	"github.com/joho/godotenv"
+	"github.com/muesli/reflow/wordwrap"
 )
 
 func main() {
@@ -47,17 +45,17 @@ func initialModel() model {
 	ta.Focus()
 
 	ta.Prompt = "┃ "
-	ta.CharLimit = 2000
+	ta.CharLimit = 200
 
-	ta.SetWidth(100)
-	ta.SetHeight(3)
+	ta.SetWidth(50)
+	ta.SetHeight(2)
 
 	ta.FocusedStyle.CursorLine = lipgloss.NewStyle()
 	ta.ShowLineNumbers = false
 
-	vp := viewport.New(100, 5)
+	vp := viewport.New(100, 10)
 	vp.SetContent(`Welcome to the OpenAI CLI!
-	Type a prompt and press ENTER.`)
+Type a prompt and press ENTER.`)
 
 	ta.KeyMap.InsertNewline.SetEnabled(false)
 
@@ -83,6 +81,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		vpCmd tea.Cmd
 	)
 
+	blueText := lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
+
 	m.textarea, tiCmd = m.textarea.Update(msg)
 	m.viewport, vpCmd = m.viewport.Update(msg)
 
@@ -93,16 +93,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Println(m.textarea.Value())
 			return m, tea.Quit
 		case tea.KeyEnter:
-			m.messages = append(m.messages, m.senderStyle.Render("You: ")+m.textarea.Value())
+			wrappedPrompt := wordwrap.String(m.textarea.Value(), 50)
+			m.messages = append(m.messages, m.senderStyle.Render("You: ")+wrappedPrompt)
 			m.viewport.SetContent(strings.Join(m.messages, "\n"))
-			response := getResponse(m.textarea.Value())
-			m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+response)
+			
+			response := cmd.Execute(m.textarea.Value())
+			wrappedResponse := wordwrap.String(response, 50)
+			m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(wrappedResponse)+"\n")
+
 			m.viewport.SetContent(strings.Join(m.messages, "\n"))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
 		}
-
-	// We handle errors just like any other message
 	case errMsg:
 		m.err = msg
 		return m, nil
@@ -111,10 +113,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(tiCmd, vpCmd)
 }
 
-func getResponse(prompt string) string {
-	response := cmd.Execute(prompt)
-	return response
-}
 
 func (m model) View() string {
 	return fmt.Sprintf(
