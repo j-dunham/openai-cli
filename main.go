@@ -40,6 +40,10 @@ type model struct {
 }
 
 func initialModel() model {
+	s := spinner.New()
+	s.Spinner = spinner.Jump
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+
 	ta := textarea.New()
 	ta.Placeholder = "What is your Prompt?"
 	ta.Focus()
@@ -60,7 +64,7 @@ Type a prompt and press ENTER.`)
 	ta.KeyMap.InsertNewline.SetEnabled(false)
 
 	return model{
-		spinner:       spinner.NewModel(),
+		spinner:       s,
 		loading:       false,
 		textarea:      ta,
 		messages:      []string{},
@@ -71,8 +75,16 @@ Type a prompt and press ENTER.`)
 	}
 }
 
+func chatCompletion(prompt string) tea.Msg {
+	response := openai.GetCompletion(prompt)
+	wrapped := wordwrap.String(response, 50)
+    return completionMsg(wrapped)
+}
+
+type completionMsg string
+
 func (m model) Init() tea.Cmd {
-	return textarea.Blink
+	return m.spinner.Tick
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -96,24 +108,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			wrappedPrompt := wordwrap.String(m.textarea.Value(), 50)
 			m.messages = append(m.messages, m.senderStyle.Render("You: ")+wrappedPrompt)
 			m.viewport.SetContent(strings.Join(m.messages, "\n"))
-
-			response := openai.GetCompletion(m.textarea.Value())
-			wrappedResponse := wordwrap.String(response, 50)
-			m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(wrappedResponse)+"\n")
-
-			m.viewport.SetContent(strings.Join(m.messages, "\n"))
+			prompt := m.textarea.Value()
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
+			m.loading = true
+			return m, func() tea.Msg { return chatCompletion(prompt) }
 		}
+	case completionMsg:
+		m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(string(msg))+"\n")
+		m.viewport.SetContent(strings.Join(m.messages, "\n"))
+		m.textarea.Reset()
+		m.viewport.GotoBottom()
+		m.loading = false
 	case errMsg:
 		m.err = msg
 		return m, nil
+	default:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
 	}
 
 	return m, tea.Batch(tiCmd, vpCmd)
 }
 
 func (m model) View() string {
+	if m.loading {
+		loading := fmt.Sprintf("\n\n   %s Loading...\n\n", m.spinner.View())
+		return loading
+	}
 	return fmt.Sprintf(
 		"%s\n\n%s",
 		m.viewport.View(),
