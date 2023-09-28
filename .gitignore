@@ -1,2 +1,3 @@
 .env
 **/**/openai-cli
+*.tape
