@@ -78,7 +78,7 @@ Type a prompt and press ENTER.`)
 func chatCompletion(prompt string) tea.Msg {
 	response := openai.GetCompletion(prompt)
 	wrapped := wordwrap.String(response, 50)
-    return completionMsg(wrapped)
+	return completionMsg(wrapped)
 }
 
 type completionMsg string
