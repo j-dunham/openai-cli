@@ -10,14 +10,18 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/j-dunham/openai-cli/config"
 	"github.com/j-dunham/openai-cli/services/openai"
-	"github.com/joho/godotenv"
 	"github.com/muesli/reflow/wordwrap"
 )
 
 func main() {
-	godotenv.Load()
-	p := tea.NewProgram(initialModel())
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p := tea.NewProgram(initialModel(cfg))
 
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
@@ -29,6 +33,7 @@ type (
 )
 
 type model struct {
+	cfg           *config.Config
 	spinner       spinner.Model
 	loading       bool
 	viewport      viewport.Model
@@ -37,9 +42,11 @@ type model struct {
 	senderStyle   lipgloss.Style
 	responseStyle lipgloss.Style
 	err           error
+	openAiService openai.Service
 }
 
-func initialModel() model {
+func initialModel(cfg *config.Config) model {
+	openAiService := openai.NewService(cfg)
 	s := spinner.New()
 	s.Spinner = spinner.Jump
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
@@ -64,6 +71,7 @@ Type a prompt and press ENTER.`)
 	ta.KeyMap.InsertNewline.SetEnabled(false)
 
 	return model{
+		cfg:           cfg,
 		spinner:       s,
 		loading:       false,
 		textarea:      ta,
@@ -72,13 +80,8 @@ Type a prompt and press ENTER.`)
 		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
 		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
 		err:           nil,
+		openAiService: openAiService,
 	}
-}
-
-func chatCompletion(prompt string) tea.Msg {
-	response := openai.GetCompletion(prompt)
-	wrapped := wordwrap.String(response, 50)
-	return completionMsg(wrapped)
 }
 
 type completionMsg string
@@ -112,7 +115,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
 			m.loading = true
-			return m, func() tea.Msg { return chatCompletion(prompt) }
+			return m, func() tea.Msg {
+				response, err := m.openAiService.GetCompletion(prompt)
+				if err != nil {
+					// not sure if this is how to best handle this error
+					// double-check the docs
+					return errMsg(err)
+				}
+				wrapped := wordwrap.String(response, 50)
+				return completionMsg(wrapped)
+			}
 		}
 	case completionMsg:
 		m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(string(msg))+"\n")
