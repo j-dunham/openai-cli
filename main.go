@@ -43,6 +43,7 @@ type model struct {
 	err           error
 	table         table.Model
 	showTable     bool
+	help          string
 }
 
 func setupTable() table.Model {
@@ -109,6 +110,11 @@ func setupSpinner() spinner.Model {
 	return s
 }
 
+func setupHelp() string {
+	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	return helpStyle.Render("CTRL+T History | CTRL+C Exit")
+}
+
 func initialModel() model {
 	return model{
 		spinner:       setupSpinner(),
@@ -121,6 +127,7 @@ func initialModel() model {
 		err:           nil,
 		table:         setupTable(),
 		showTable:     false,
+		help:          setupHelp(),
 	}
 }
 
@@ -221,14 +228,16 @@ func (m model) View() string {
 	}
 	if m.showTable {
 		return fmt.Sprintf(
-			"%s\n%s\n",
+			"%s\n%s\n%s",
 			"Prompt History Selector",
 			m.table.View(),
+			m.help,
 		) + "\n\n"
 	}
 	return fmt.Sprintf(
-		"%s\n\n%s",
+		"%s\n\n%s\n\n%s",
 		m.viewport.View(),
 		m.textarea.View(),
+		m.help,
 	) + "\n\n"
 }
