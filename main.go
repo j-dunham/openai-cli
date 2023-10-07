@@ -46,7 +46,7 @@ type model struct {
 	help          string
 }
 
-func setupTable() table.Model {
+func newTable() table.Model {
 	columns := []table.Column{
 		{Title: "Id", Width: 4},
 		{Title: "Prompt", Width: 50},
@@ -79,7 +79,7 @@ func setupTable() table.Model {
 	return t
 }
 
-func setupTextarea() textarea.Model {
+func newTextarea() textarea.Model {
 	ta := textarea.New()
 	ta.Placeholder = "What is your Prompt?"
 	ta.Focus()
@@ -96,38 +96,38 @@ func setupTextarea() textarea.Model {
 	return ta
 }
 
-func setupViewport() viewport.Model {
+func newViewport() viewport.Model {
 	vp := viewport.New(100, 10)
 	vp.SetContent(`Welcome to the OpenAI CLI!
 Type a prompt and press ENTER.`)
 	return vp
 }
 
-func setupSpinner() spinner.Model {
+func newSpinner() spinner.Model {
 	s := spinner.New()
 	s.Spinner = spinner.Jump
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	return s
 }
 
-func setupHelp() string {
+func newHelp() string {
 	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	return helpStyle.Render("CTRL+T History | CTRL+C Exit")
 }
 
 func initialModel() model {
 	return model{
-		spinner:       setupSpinner(),
+		spinner:       newSpinner(),
 		loading:       false,
-		textarea:      setupTextarea(),
+		textarea:      newTextarea(),
 		messages:      []string{},
-		viewport:      setupViewport(),
+		viewport:      newViewport(),
 		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
 		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
 		err:           nil,
-		table:         setupTable(),
+		table:         newTable(),
 		showTable:     false,
-		help:          setupHelp(),
+		help:          newHelp(),
 	}
 }
 
