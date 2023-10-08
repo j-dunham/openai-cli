@@ -34,7 +34,7 @@ func execute_sql(sql string, args ...interface{}) (rows sql.Result, err error) {
 	res, err := db.Exec(sql, args...)
 	if err != nil {
 		err = fmt.Errorf("execute_sql: %s .. %s", err, sql)
-		log.Fatal(err)
+		log.Println("Warning: ", err)
 	}
 	return res, err
 }
@@ -43,10 +43,11 @@ func query_db(sql string) (rows *sql.Rows) {
 	db := openDB()
 	defer db.Close()
 
+	log.Println("Warning: ")
 	rows, err := db.Query(sql)
 	if err != nil {
 		err = fmt.Errorf("query_db: %s", err)
-		log.Fatal(err)
+		log.Println("Warning: ", err)
 	}
 	return rows
 }
@@ -65,7 +66,7 @@ func InsertPrompt(prompt string, response string) int64 {
 
 	idx, err := res.LastInsertId()
 	if err != nil {
-		log.Fatal("failed to insert prompt")
+		log.Println("Warnig: failed to insert prompt")
 	}
 	return idx
 }
@@ -82,7 +83,8 @@ func ReadPrompts() (prompts []Prompt, err error) {
 		var p Prompt
 		err = rows.Scan(&p.ID, &p.Prompt, &p.Response, &p.CreatedAt)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Warning: ", err)
+			return prompts, err
 		}
 		prompts = append(prompts, p)
 	}
