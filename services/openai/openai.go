@@ -100,7 +100,6 @@ func GetCompletion(prompt string) string {
 	}
 	defer resp.Body.Close()
 
-	// Stop the loading animation
 	answer := parseResponse(prompt, *resp)
 	return answer
 }
