@@ -52,16 +52,7 @@ func query_db(sql string) (rows *sql.Rows) {
 }
 
 func CreateTable() {
-	tableSql := fmt.Sprintf("SELECT name FROM sqlite_master WHERE type='table' AND name='%s'", table)
-	rows := query_db(tableSql)
-	defer rows.Close()
-
-	exists := rows.Next()
-	if exists {
-		return
-	}
-
-	createSql := fmt.Sprintf("CREATE TABLE %s (id INTEGER PRIMARY KEY AUTOINCREMENT, prompt TEXT, response TEXT, CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP)", table)
+        createSql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, prompt TEXT, response TEXT, CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP)", table)
 	execute_sql(createSql)
 }
 
