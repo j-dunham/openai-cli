@@ -132,7 +132,6 @@ func initialModel() model {
 }
 
 func savePrompt(prompt string, response string) {
-	storage.CreateTable()
 	storage.InsertPrompt(prompt, response)
 }
 
