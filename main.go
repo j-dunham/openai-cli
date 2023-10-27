@@ -18,6 +18,23 @@ import (
 	"github.com/muesli/reflow/wrap"
 )
 
+func initialModel(cfg *config.Config) model {
+	return model{
+		cfg:           cfg,
+		spinner:       newSpinner(),
+		loading:       false,
+		viewport:      newViewport(),
+		messages:      []string{},
+		textarea:      newTextarea(),
+		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("205")),
+		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("12")),
+		openAiService: openai.NewService(cfg),
+		table:         newTable(),
+		showTable:     false,
+		help:          newHelp(),
+	}
+}
+
 func main() {
 	cfg, err := config.NewConfig()
 	if err != nil {
@@ -25,10 +42,8 @@ func main() {
 	}
 
 	p := tea.NewProgram(initialModel(cfg))
-	godotenv.Load()
 	storage.CreateTable()
 
-	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -49,13 +64,6 @@ type model struct {
 	responseStyle lipgloss.Style
 	err           error
 	openAiService openai.Service
-}
-
-func initialModel(cfg *config.Config) model {
-	openAiService := openai.NewService(cfg)
-	s := spinner.New()
-	s.Spinner = spinner.Jump
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	table         table.Model
 	showTable     bool
 	help          string
@@ -130,41 +138,15 @@ func newHelp() string {
 	return helpStyle.Render("CTRL+T History | CTRL+C Exit")
 }
 
-func initialModel() model {
-	return model{
-		cfg:           cfg,
-		spinner:       newSpinner(),
-		loading:       false,
-		textarea:      newTextarea(),
-		messages:      []string{},
-		viewport:      newViewport(),
-		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
-		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
-		err:           nil,
-		openAiService: openAiService,
-		table:         newTable(),
-		showTable:     false,
-		help:          newHelp(),
-	}
-}
-
 func savePrompt(prompt string, response string) {
 	storage.InsertPrompt(prompt, response)
 }
 
-func chatCompletion(prompt string) tea.Msg {
-	response := openai.GetCompletion(prompt)
-	savePrompt(prompt, response)
-
-	wrapped := wordwrap.String(response, 50)
-	return completionMsg(wrapped)
-}
-
-type completionMsg string
-
 func (m model) Init() tea.Cmd {
 	return m.spinner.Tick
 }
+
+type completionMsg string
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
@@ -204,10 +186,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.messages = append(m.messages, m.senderStyle.Render("You: ")+blueText.Render(wrappedPrompt)+"\n")
 			}
 
-			var cmd tea.Cmd
+			prompt := m.textarea.Value()
 			if !m.showTable {
-				prompt := m.textarea.Value()
-				cmd = func() tea.Msg { return chatCompletion(prompt) }
+				cmd = func() tea.Msg {
+					_, msg := m.openAiService.GetCompletion(prompt)
+					return msg
+				}
 				m.loading = true
 			} else {
 				m.showTable = false
@@ -227,7 +211,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				wrapped := wordwrap.String(response, 50)
 				return completionMsg(wrapped)
 			}
-			return m, cmd
 		}
 		m.table, cmd = m.table.Update(msg)
 	case completionMsg:

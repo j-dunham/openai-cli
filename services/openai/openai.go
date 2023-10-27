@@ -3,6 +3,7 @@ package openai
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 
 	"io"
 	"net/http"
@@ -19,6 +20,10 @@ type service struct {
 }
 
 func (s service) GetCompletion(prompt string) (string, error) {
+	if s.cfg == nil {
+		log.Fatal("config is nil")
+	}
+
 	data := Data{
 		Model:       s.cfg.OpenAiModel,
 		MaxTokens:   s.cfg.OpenAiMaxTokens,
@@ -56,7 +61,9 @@ func (s service) GetCompletion(prompt string) (string, error) {
 }
 
 func NewService(cfg *config.Config) Service {
-	return service{}
+	return service{
+		cfg: cfg,
+	}
 }
 
 type Message struct {
