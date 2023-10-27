@@ -208,6 +208,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// double-check the docs
 					return errMsg(err)
 				}
+				savePrompt(prompt, response)
 				wrapped := wordwrap.String(response, 50)
 				return completionMsg(wrapped)
 			}
