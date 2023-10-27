@@ -3,10 +3,11 @@ package openai
 import (
 	"bytes"
 	"encoding/json"
-	"log"
+		"log"
 
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/j-dunham/openai-cli/config"
 )
@@ -18,6 +19,45 @@ type Service interface {
 type service struct {
 	cfg *config.Config
 }
+
+type RequestOption func(*http.Request)
+
+func WithURL(u string) RequestOption {
+	return func(req *http.Request) {
+		req.URL, _ = url.Parse(u)
+	}
+}
+
+func WithMethod(m string) RequestOption {
+	return func(req *http.Request) {
+		req.Method = m
+	}
+}
+
+func WithHeader(key, value string) RequestOption {
+	return func(req *http.Request) {
+		if req.Header == nil {
+			req.Header = make(http.Header)
+		}
+		req.Header.Add(key, value)
+	}
+}
+
+func WithBody(body []byte) RequestOption {
+	return func(req *http.Request) {
+		req.Body = io.NopCloser(bytes.NewReader(body))
+	}
+}
+
+func NewRequest(opts ...RequestOption) *http.Request {
+	req := &http.Request{}
+	for _, opt := range opts {
+		opt(req)
+	}
+	return req
+}
+
+
 
 func (s service) GetCompletion(prompt string) (string, error) {
 	if s.cfg == nil {
@@ -36,17 +76,18 @@ func (s service) GetCompletion(prompt string) (string, error) {
 		return "", err
 	}
 
-	// maybe use functional options for setting target url?
-	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(payload))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.cfg.OpenAiToken)
+	req := NewRequest(
+		WithURL("https://api.openai.com/v1/chat/completions"),
+		WithMethod("POST"),
+		WithHeader("Content-Type", "application/json"),
+		WithHeader("Authorization", "Bearer "+s.cfg.OpenAiToken),
+		WithBody(payload),
+	)
+
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
+		if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()

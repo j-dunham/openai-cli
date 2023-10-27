@@ -213,6 +213,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.table, cmd = m.table.Update(msg)
+		return m, cmd
 	case completionMsg:
 		m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(string(msg))+"\n")
 		m.viewport.SetContent(strings.Join(m.messages, "\n"))
