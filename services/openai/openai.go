@@ -3,7 +3,7 @@ package openai
 import (
 	"bytes"
 	"encoding/json"
-		"log"
+	"log"
 
 	"io"
 	"net/http"
@@ -57,8 +57,6 @@ func NewRequest(opts ...RequestOption) *http.Request {
 	return req
 }
 
-
-
 func (s service) GetCompletion(prompt string) (string, error) {
 	if s.cfg == nil {
 		log.Fatal("config is nil")
@@ -84,10 +82,9 @@ func (s service) GetCompletion(prompt string) (string, error) {
 		WithBody(payload),
 	)
 
-
 	client := &http.Client{}
 	resp, err := client.Do(req)
-		if err != nil {
+	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
