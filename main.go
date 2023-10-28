@@ -11,18 +11,39 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/j-dunham/openai-cli/config"
 	"github.com/j-dunham/openai-cli/services/openai"
 	"github.com/j-dunham/openai-cli/services/storage"
-	"github.com/joho/godotenv"
 	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/reflow/wrap"
 )
 
+func initialModel(cfg *config.Config) model {
+	return model{
+		cfg:           cfg,
+		spinner:       newSpinner(),
+		loading:       false,
+		viewport:      newViewport(),
+		messages:      []string{},
+		textarea:      newTextarea(),
+		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("205")),
+		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("12")),
+		openAiService: openai.NewService(cfg),
+		table:         newTable(),
+		showTable:     false,
+		help:          newHelp(),
+	}
+}
+
 func main() {
-	godotenv.Load()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	p := tea.NewProgram(initialModel(cfg))
 	storage.CreateTable()
 
-	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -33,6 +54,7 @@ type (
 )
 
 type model struct {
+	cfg           *config.Config
 	spinner       spinner.Model
 	loading       bool
 	viewport      viewport.Model
@@ -41,6 +63,7 @@ type model struct {
 	senderStyle   lipgloss.Style
 	responseStyle lipgloss.Style
 	err           error
+	openAiService openai.Service
 	table         table.Model
 	showTable     bool
 	help          string
@@ -115,39 +138,15 @@ func newHelp() string {
 	return helpStyle.Render("CTRL+T History | CTRL+C Exit")
 }
 
-func initialModel() model {
-	return model{
-		spinner:       newSpinner(),
-		loading:       false,
-		textarea:      newTextarea(),
-		messages:      []string{},
-		viewport:      newViewport(),
-		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
-		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
-		err:           nil,
-		table:         newTable(),
-		showTable:     false,
-		help:          newHelp(),
-	}
-}
-
 func savePrompt(prompt string, response string) {
 	storage.InsertPrompt(prompt, response)
 }
 
-func chatCompletion(prompt string) tea.Msg {
-	response := openai.GetCompletion(prompt)
-	savePrompt(prompt, response)
-
-	wrapped := wordwrap.String(response, 50)
-	return completionMsg(wrapped)
-}
-
-type completionMsg string
-
 func (m model) Init() tea.Cmd {
 	return m.spinner.Tick
 }
+
+type completionMsg string
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
@@ -187,10 +186,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.messages = append(m.messages, m.senderStyle.Render("You: ")+blueText.Render(wrappedPrompt)+"\n")
 			}
 
-			var cmd tea.Cmd
+			prompt := m.textarea.Value()
 			if !m.showTable {
-				prompt := m.textarea.Value()
-				cmd = func() tea.Msg { return chatCompletion(prompt) }
+				cmd = func() tea.Msg {
+					_, msg := m.openAiService.GetCompletion(prompt)
+					return msg
+				}
 				m.loading = true
 			} else {
 				m.showTable = false
@@ -199,7 +200,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport.SetContent(strings.Join(m.messages, "\n"))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
-			return m, cmd
+			m.loading = true
+			return m, func() tea.Msg {
+				response, err := m.openAiService.GetCompletion(prompt)
+				if err != nil {
+					// not sure if this is how to best handle this error
+					// double-check the docs
+					return errMsg(err)
+				}
+				wrapped := wordwrap.String(response, 50)
+				return completionMsg(wrapped)
+			}
 		}
 		m.table, cmd = m.table.Update(msg)
 	case completionMsg:
