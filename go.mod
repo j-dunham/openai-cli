@@ -28,5 +28,6 @@ require (
 require (
 	github.com/charmbracelet/bubbles v0.16.1
 	github.com/mattn/go-isatty v0.0.18 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17
 	golang.org/x/sys v0.6.0 // indirect
 )

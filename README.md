@@ -2,7 +2,10 @@
 
 This is a command-line interface (CLI) for OpenAI's ChatGPT API. It allows you to interact with the API from your terminal, without needing to use a web browser.
 
+### Chat with OpenAI 
 ![Demo](demo.gif)
+### List Previous Prompts
+![List Chat](list.gif)
 
 ## Setup
 1) Create a OpenAI API token at https://platform.openai.com/account/api-keys
