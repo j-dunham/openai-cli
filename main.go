@@ -175,7 +175,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.table.SetRows(rows)
 			m.showTable = !m.showTable
 		case tea.KeyEnter:
-
 			if m.showTable {
 				wrappedPrompt := wrap.String(m.table.SelectedRow()[1], 50)
 				m.messages = append(m.messages, m.senderStyle.Render("You: ")+blueText.Render(wrappedPrompt)+"\n")
@@ -185,21 +184,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				wrappedPrompt := wrap.String(m.textarea.Value(), 50)
 				m.messages = append(m.messages, m.senderStyle.Render("You: ")+blueText.Render(wrappedPrompt)+"\n")
 			}
-
 			prompt := m.textarea.Value()
-			if !m.showTable {
-				cmd = func() tea.Msg {
-					_, msg := m.openAiService.GetCompletion(prompt)
-					return msg
-				}
-				m.loading = true
-			} else {
-				m.showTable = false
-				cmd = nil
-			}
 			m.viewport.SetContent(strings.Join(m.messages, "\n"))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
+
+			if m.showTable {
+				m.showTable = false
+				cmd = nil
+				return m, cmd
+			}
+
 			m.loading = true
 			return m, func() tea.Msg {
 				response, err := m.openAiService.GetCompletion(prompt)
