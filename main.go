@@ -130,7 +130,7 @@ func newSpinner() spinner.Model {
 
 func newHelp() string {
 	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	return helpStyle.Render("CTRL+T History | CTRL+C Exit")
+	return helpStyle.Render("CTRL+T History Table  | CTRL+W Wipe History | CTRL+C Exit")
 }
 
 func savePrompt(prompt string, response string) {
@@ -186,6 +186,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.table.SetRows(rows)
 			m.showTable = !m.showTable
+		case tea.KeyCtrlW:
+			m.messages = []openai.Message{}
+			m.viewport.SetContent(RenderMessages(m.messages))
+			return m, cmd
 		case tea.KeyEnter:
 			if m.showTable {
 				m.messages = append(m.messages, openai.Message{Role: "user", Content: m.table.SelectedRow()[1]})
