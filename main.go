@@ -15,7 +15,6 @@ import (
 	"github.com/j-dunham/openai-cli/services/openai"
 	"github.com/j-dunham/openai-cli/services/storage"
 	"github.com/muesli/reflow/wordwrap"
-	"github.com/muesli/reflow/wrap"
 )
 
 func initialModel(cfg *config.Config) model {
@@ -24,10 +23,8 @@ func initialModel(cfg *config.Config) model {
 		spinner:       newSpinner(),
 		loading:       false,
 		viewport:      newViewport(),
-		messages:      []string{},
+		messages:      []openai.Message{},
 		textarea:      newTextarea(),
-		senderStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("205")),
-		responseStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("12")),
 		openAiService: openai.NewService(cfg),
 		table:         newTable(),
 		showTable:     false,
@@ -58,10 +55,8 @@ type model struct {
 	spinner       spinner.Model
 	loading       bool
 	viewport      viewport.Model
-	messages      []string
+	messages      []openai.Message
 	textarea      textarea.Model
-	senderStyle   lipgloss.Style
-	responseStyle lipgloss.Style
 	err           error
 	openAiService openai.Service
 	table         table.Model
@@ -70,12 +65,12 @@ type model struct {
 }
 
 func newTable() table.Model {
+	storage.CreateTable()
 	columns := []table.Column{
 		{Title: "Id", Width: 4},
 		{Title: "Prompt", Width: 50},
 		{Title: "Response", Width: 50},
 	}
-
 	prompts, _ := storage.ReadPrompts()
 	rows := make([]table.Row, 0)
 	for _, p := range prompts {
@@ -142,6 +137,25 @@ func savePrompt(prompt string, response string) {
 	storage.InsertPrompt(prompt, response)
 }
 
+func RenderMessages(messages []openai.Message) string {
+	colors := map[string]lipgloss.Style{
+		"user":      lipgloss.NewStyle().Foreground(lipgloss.Color("205")),
+		"assistant": lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
+		"system":    lipgloss.NewStyle().Foreground(lipgloss.Color("240")),
+		"prompt":    lipgloss.NewStyle().Foreground(lipgloss.Color("12")),
+	}
+
+	formatedMsgs := make([]string, 0)
+	for _, msg := range messages {
+		s := colors[msg.Role].Render(strings.ToUpper(msg.Role)) + ": " + colors["prompt"].Render(msg.Content)
+		if msg.Role == "assistant" {
+			s += "\n"
+		}
+		formatedMsgs = append(formatedMsgs, s)
+	}
+	return strings.Join(formatedMsgs, "\n")
+}
+
 func (m model) Init() tea.Cmd {
 	return m.spinner.Tick
 }
@@ -154,8 +168,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		vpCmd tea.Cmd
 		cmd   tea.Cmd
 	)
-
-	blueText := lipgloss.NewStyle().Foreground(lipgloss.Color("12"))
 
 	m.textarea, tiCmd = m.textarea.Update(msg)
 	m.viewport, vpCmd = m.viewport.Update(msg)
@@ -176,16 +188,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showTable = !m.showTable
 		case tea.KeyEnter:
 			if m.showTable {
-				wrappedPrompt := wrap.String(m.table.SelectedRow()[1], 50)
-				m.messages = append(m.messages, m.senderStyle.Render("You: ")+blueText.Render(wrappedPrompt)+"\n")
-				wrappedResponse := wrap.String(m.table.SelectedRow()[2], 50)
-				m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(wrappedResponse)+"\n")
+				m.messages = append(m.messages, openai.Message{Role: "user", Content: m.table.SelectedRow()[1]})
+				m.messages = append(m.messages, openai.Message{Role: "assistant", Content: m.table.SelectedRow()[2]})
 			} else {
-				wrappedPrompt := wrap.String(m.textarea.Value(), 50)
-				m.messages = append(m.messages, m.senderStyle.Render("You: ")+blueText.Render(wrappedPrompt)+"\n")
+				prompt := m.textarea.Value()
+				m.messages = append(m.messages, openai.Message{Role: "user", Content: prompt})
 			}
 			prompt := m.textarea.Value()
-			m.viewport.SetContent(strings.Join(m.messages, "\n"))
+			m.viewport.SetContent(RenderMessages(m.messages))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
 
@@ -211,9 +221,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.table, cmd = m.table.Update(msg)
 		return m, cmd
 	case completionMsg:
-		m.messages = append(m.messages, m.responseStyle.Render("OpenAI: ")+blueText.Render(string(msg))+"\n")
-		m.viewport.SetContent(strings.Join(m.messages, "\n"))
+		m.messages = append(m.messages, openai.Message{Role: "assistant", Content: string(msg)})
 		m.textarea.Reset()
+		m.viewport.SetContent(RenderMessages(m.messages))
 		m.viewport.GotoBottom()
 		m.loading = false
 	case errMsg:

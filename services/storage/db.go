@@ -43,7 +43,6 @@ func query_db(sql string) (rows *sql.Rows) {
 	db := openDB()
 	defer db.Close()
 
-	log.Println("Warning: ")
 	rows, err := db.Query(sql)
 	if err != nil {
 		err = fmt.Errorf("query_db: %s", err)
