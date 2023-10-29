@@ -151,7 +151,7 @@ func RenderMessages(messages []openai.Message) string {
 		if msg.Role == "assistant" {
 			s += "\n"
 		}
-		formatedMsgs = append(formatedMsgs, s)
+		formatedMsgs = append(formatedMsgs, wordwrap.String(s, 50))
 	}
 	return strings.Join(formatedMsgs, "\n")
 }
@@ -194,7 +194,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				prompt := m.textarea.Value()
 				m.messages = append(m.messages, openai.Message{Role: "user", Content: prompt})
 			}
-			prompt := m.textarea.Value()
 			m.viewport.SetContent(RenderMessages(m.messages))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
@@ -205,17 +204,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 
+			// TODO: Change this to pass all messages to keep the context
+			prompt := m.messages[len(m.messages)-1]
+			prompts := []openai.Message{prompt}
+
 			m.loading = true
 			return m, func() tea.Msg {
-				response, err := m.openAiService.GetCompletion(prompt)
+				response, err := m.openAiService.GetCompletion(prompts)
 				if err != nil {
 					// not sure if this is how to best handle this error
 					// double-check the docs
 					return errMsg(err)
 				}
-				savePrompt(prompt, response)
-				wrapped := wordwrap.String(response, 50)
-				return completionMsg(wrapped)
+				savePrompt(prompt.Content, response)
+				return completionMsg(response)
 			}
 		}
 		m.table, cmd = m.table.Update(msg)

@@ -13,7 +13,7 @@ import (
 )
 
 type Service interface {
-	GetCompletion(prompt string) (string, error)
+	GetCompletion(prompt []Message) (string, error)
 }
 
 type service struct {
@@ -57,7 +57,7 @@ func NewRequest(opts ...RequestOption) *http.Request {
 	return req
 }
 
-func (s service) GetCompletion(prompt string) (string, error) {
+func (s service) GetCompletion(messages []Message) (string, error) {
 	if s.cfg == nil {
 		log.Fatal("config is nil")
 	}
@@ -66,7 +66,7 @@ func (s service) GetCompletion(prompt string) (string, error) {
 		Model:       s.cfg.OpenAiModel,
 		MaxTokens:   s.cfg.OpenAiMaxTokens,
 		Temperature: s.cfg.OpenAiTemperature,
-		Messages:    []Message{{Role: "user", Content: prompt}},
+		Messages:    messages,
 	}
 
 	payload, err := json.Marshal(data)
