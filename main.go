@@ -208,19 +208,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 
-			// TODO: Change this to pass all messages to keep the context
-			prompt := m.messages[len(m.messages)-1]
-			prompts := []openai.Message{prompt}
-
 			m.loading = true
 			return m, func() tea.Msg {
-				response, err := m.openAiService.GetCompletion(prompts)
+				response, err := m.openAiService.GetCompletion(m.messages)
 				if err != nil {
 					// not sure if this is how to best handle this error
 					// double-check the docs
 					return errMsg(err)
 				}
-				savePrompt(prompt.Content, response)
+				savePrompt(m.messages[len(m.messages)-1].Content, response)
 				return completionMsg(response)
 			}
 		}
