@@ -68,13 +68,14 @@ func newTable() table.Model {
 	storage.CreateTable()
 	columns := []table.Column{
 		{Title: "Id", Width: 4},
+		{Title: "Role", Width: 10},
 		{Title: "Prompt", Width: 50},
 		{Title: "Response", Width: 50},
 	}
 	prompts, _ := storage.ReadPrompts()
 	rows := make([]table.Row, 0)
 	for _, p := range prompts {
-		rows = append(rows, table.Row{p.ID, p.Prompt, p.Response})
+		rows = append(rows, table.Row{p.ID, p.Role, p.Prompt, p.Response})
 	}
 
 	t := table.New(
@@ -133,8 +134,8 @@ func newHelp() string {
 	return helpStyle.Render("CTRL+T History Table  | CTRL+W Wipe History | CTRL+C Exit")
 }
 
-func savePrompt(prompt string, response string) {
-	storage.InsertPrompt(prompt, response)
+func savePrompt(message openai.Message, response string) {
+	storage.InsertPrompt(message.Role, message.Content, response)
 }
 
 func RenderMessages(messages []openai.Message) string {
@@ -182,7 +183,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			prompts, _ := storage.ReadPrompts()
 			rows := make([]table.Row, 0)
 			for _, p := range prompts {
-				rows = append(rows, table.Row{p.ID, p.Prompt, p.Response})
+				rows = append(rows, table.Row{p.ID, p.Role, p.Prompt, p.Response})
 			}
 			m.table.SetRows(rows)
 			m.showTable = !m.showTable
@@ -191,9 +192,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.viewport.SetContent(RenderMessages(m.messages))
 			return m, cmd
 		case tea.KeyEnter:
+			if strings.HasPrefix(m.textarea.Value(), "/system") {
+				message := openai.Message{Role: "system", Content: strings.TrimPrefix(m.textarea.Value(), "/system")}
+				m.messages = append(m.messages, message)
+				savePrompt(message, "")
+				m.viewport.SetContent(RenderMessages(m.messages))
+				m.textarea.Reset()
+				m.viewport.GotoBottom()
+				return m, cmd
+			}
+
 			if m.showTable {
-				m.messages = append(m.messages, openai.Message{Role: "user", Content: m.table.SelectedRow()[1]})
-				m.messages = append(m.messages, openai.Message{Role: "assistant", Content: m.table.SelectedRow()[2]})
+				row := m.table.SelectedRow()
+				m.messages = append(m.messages, openai.Message{Role: row[1], Content: row[2]})
+				if row[3] != "" {
+					m.messages = append(m.messages, openai.Message{Role: "assistant", Content: m.table.SelectedRow()[3]})
+				}
 			} else {
 				prompt := m.textarea.Value()
 				m.messages = append(m.messages, openai.Message{Role: "user", Content: prompt})
@@ -212,11 +226,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, func() tea.Msg {
 				response, err := m.openAiService.GetCompletion(m.messages)
 				if err != nil {
-					// not sure if this is how to best handle this error
-					// double-check the docs
 					return errMsg(err)
 				}
-				savePrompt(m.messages[len(m.messages)-1].Content, response)
+				savePrompt(m.messages[len(m.messages)-1], response)
 				return completionMsg(response)
 			}
 		}

@@ -16,6 +16,7 @@ type Prompt struct {
 	ID        string
 	Prompt    string
 	Response  string
+	Role      string
 	CreatedAt time.Time
 }
 
@@ -52,13 +53,16 @@ func query_db(sql string) (rows *sql.Rows) {
 }
 
 func CreateTable() {
-	createSql := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, prompt TEXT, response TEXT, CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP)", table)
+	createSql := fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, prompt TEXT, response TEXT, CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP)",
+		table,
+	)
 	execute_sql(createSql)
 }
 
-func InsertPrompt(prompt string, response string) int64 {
-	insertSql := fmt.Sprintf("INSERT INTO %s (prompt, response) VALUES (?, ?)", table)
-	res, err := execute_sql(insertSql, prompt, response)
+func InsertPrompt(role, prompt, response string) int64 {
+	insertSql := fmt.Sprintf("INSERT INTO %s (role, prompt, response) VALUES (?, ?, ?)", table)
+	res, err := execute_sql(insertSql, role, prompt, response)
 	if err != nil {
 		log.Fatal("failed to insert prompt")
 	}
@@ -80,7 +84,7 @@ func ReadPrompts() (prompts []Prompt, err error) {
 	prompts = make([]Prompt, 0)
 	for rows.Next() {
 		var p Prompt
-		err = rows.Scan(&p.ID, &p.Prompt, &p.Response, &p.CreatedAt)
+		err = rows.Scan(&p.ID, &p.Role, &p.Prompt, &p.Response, &p.CreatedAt)
 		if err != nil {
 			log.Println("Warning: ", err)
 			return prompts, err
