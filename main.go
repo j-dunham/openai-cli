@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"strings"
@@ -17,13 +18,13 @@ import (
 	"github.com/muesli/reflow/wordwrap"
 )
 
-func initialModel(cfg *config.Config) model {
+func initialModel(cfg *config.Config, messages []openai.Message) model {
 	return model{
 		cfg:           cfg,
 		spinner:       newSpinner(),
 		loading:       false,
-		viewport:      newViewport(),
-		messages:      []openai.Message{},
+		viewport:      newViewport(messages),
+		messages:      messages,
 		textarea:      newTextarea(),
 		openAiService: openai.NewService(cfg),
 		table:         newTable(),
@@ -33,12 +34,20 @@ func initialModel(cfg *config.Config) model {
 }
 
 func main() {
+	var system string
+	flag.StringVar(&system, "system", "", "System prompt")
+	flag.Parse()
+
 	cfg, err := config.NewConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	p := tea.NewProgram(initialModel(cfg))
+	messages := make([]openai.Message, 0)
+	if system != "" {
+		messages = append(messages, openai.Message{Role: "system", Content: system})
+	}
+	p := tea.NewProgram(initialModel(cfg, messages))
 	storage.CreateTable()
 
 	if _, err := p.Run(); err != nil {
@@ -115,10 +124,14 @@ func newTextarea() textarea.Model {
 	return ta
 }
 
-func newViewport() viewport.Model {
+func newViewport(messages []openai.Message) viewport.Model {
 	vp := viewport.New(100, 10)
-	vp.SetContent(`Welcome to the OpenAI CLI!
-Type a prompt and press ENTER.`)
+	content := `Welcome to the OpenAI CLI!
+Type a prompt and press ENTER.`
+	if len(messages) > 0 {
+		content += fmt.Sprintf("\n\n%s", RenderMessages(messages))
+	}
+	vp.SetContent(content)
 	return vp
 }
 
