@@ -55,9 +55,9 @@ func main() {
 	}
 	model := initialModel(cfg, messages)
 	defer model.storage.Close()
-	
+
 	p := tea.NewProgram(model)
-	
+
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}

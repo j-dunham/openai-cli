@@ -34,7 +34,7 @@ func NewDB(cfg *config.Config) *DB {
 }
 
 func (db *DB) openDB() {
-	conn, err := sql.Open("sqlite3", db.config.DBFile )
+	conn, err := sql.Open("sqlite3", db.config.DBFile)
 	if err != nil {
 		log.Fatal(err)
 	}
