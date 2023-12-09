@@ -13,6 +13,7 @@ type Config struct {
 	OpenAiModel       string
 	OpenAiMaxTokens   int
 	OpenAiTemperature float64
+	DBFile            string
 }
 
 func NewConfig() (*Config, error) {
@@ -59,5 +60,6 @@ func NewConfig() (*Config, error) {
 		OpenAiModel:       os.Getenv("OPEN_AI_MODEL"),
 		OpenAiMaxTokens:   maxTokens,
 		OpenAiTemperature: temperature,
+		DBFile:            "Prompt.db",
 	}, nil
 }

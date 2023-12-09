@@ -6,11 +6,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/j-dunham/openai-cli/config"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const file = "prompt.db"
-const table = "prompts"
+const TABLE = "prompts"
 
 type Prompt struct {
 	ID        string
@@ -20,19 +20,33 @@ type Prompt struct {
 	CreatedAt time.Time
 }
 
-func openDB() (db *sql.DB) {
-	db, err := sql.Open("sqlite3", file)
+type DB struct {
+	config *config.Config
+	conn   *sql.DB
+}
+
+func NewDB(cfg *config.Config) *DB {
+	return &DB{
+		config: cfg,
+		conn:   nil,
+	}
+
+}
+
+func (db *DB) openDB() {
+	conn, err := sql.Open("sqlite3", db.config.DBFile )
 	if err != nil {
 		log.Fatal(err)
 	}
-	return db
+	db.conn = conn
+	db.createTable()
 }
 
-func execute_sql(sql string, args ...interface{}) (rows sql.Result, err error) {
-	db := openDB()
-	defer db.Close()
-
-	res, err := db.Exec(sql, args...)
+func (db *DB) executeSql(sql string, args ...interface{}) (rows sql.Result, err error) {
+	if db.conn == nil {
+		db.openDB()
+	}
+	res, err := db.conn.Exec(sql, args...)
 	if err != nil {
 		err = fmt.Errorf("execute_sql: %s .. %s", err, sql)
 		log.Println("Warning: ", err)
@@ -40,11 +54,11 @@ func execute_sql(sql string, args ...interface{}) (rows sql.Result, err error) {
 	return res, err
 }
 
-func query_db(sql string) (rows *sql.Rows) {
-	db := openDB()
-	defer db.Close()
-
-	rows, err := db.Query(sql)
+func (db *DB) queryDb(sql string) (rows *sql.Rows) {
+	if db.conn == nil {
+		db.openDB()
+	}
+	rows, err := db.conn.Query(sql)
 	if err != nil {
 		err = fmt.Errorf("query_db: %s", err)
 		log.Println("Warning: ", err)
@@ -52,17 +66,17 @@ func query_db(sql string) (rows *sql.Rows) {
 	return rows
 }
 
-func CreateTable() {
+func (db *DB) createTable() {
 	createSql := fmt.Sprintf(
 		"CREATE TABLE IF NOT EXISTS %s (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT, prompt TEXT, response TEXT, CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP)",
-		table,
+		TABLE,
 	)
-	execute_sql(createSql)
+	db.executeSql(createSql)
 }
 
-func InsertPrompt(role, prompt, response string) int64 {
-	insertSql := fmt.Sprintf("INSERT INTO %s (role, prompt, response) VALUES (?, ?, ?)", table)
-	res, err := execute_sql(insertSql, role, prompt, response)
+func (db *DB) InsertPrompt(role, prompt, response string) int64 {
+	insertSql := fmt.Sprintf("INSERT INTO %s (role, prompt, response) VALUES (?, ?, ?)", TABLE)
+	res, err := db.executeSql(insertSql, role, prompt, response)
 	if err != nil {
 		log.Fatal("failed to insert prompt")
 	}
@@ -74,12 +88,8 @@ func InsertPrompt(role, prompt, response string) int64 {
 	return idx
 }
 
-func ReadPrompts() (prompts []Prompt, err error) {
-	db := openDB()
-	defer db.Close()
-
-	rows := query_db(fmt.Sprintf("SELECT * FROM %s ORDER BY CreatedAt DESC", table))
-	defer rows.Close()
+func (db *DB) ReadPrompts() (prompts []Prompt, err error) {
+	rows := db.queryDb(fmt.Sprintf("SELECT * FROM %s ORDER BY CreatedAt DESC", TABLE))
 
 	prompts = make([]Prompt, 0)
 	for rows.Next() {
@@ -92,4 +102,10 @@ func ReadPrompts() (prompts []Prompt, err error) {
 		prompts = append(prompts, p)
 	}
 	return prompts, err
+}
+
+func (db *DB) Close() {
+	if db.conn != nil {
+		db.conn.Close()
+	}
 }

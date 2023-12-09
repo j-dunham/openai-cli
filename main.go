@@ -19,6 +19,11 @@ import (
 )
 
 func initialModel(cfg *config.Config, messages []openai.Message) model {
+	storage := storage.NewDB(cfg)
+	prompts, err := storage.ReadPrompts()
+	if err != nil {
+		log.Fatal(err)
+	}
 	return model{
 		cfg:           cfg,
 		spinner:       newSpinner(),
@@ -27,9 +32,10 @@ func initialModel(cfg *config.Config, messages []openai.Message) model {
 		messages:      messages,
 		textarea:      newTextarea(),
 		openAiService: openai.NewService(cfg),
-		table:         newTable(),
+		table:         newTable(prompts),
 		showTable:     false,
 		help:          newHelp(),
+		storage:       *storage,
 	}
 }
 
@@ -47,9 +53,11 @@ func main() {
 	if system != "" {
 		messages = append(messages, openai.Message{Role: "system", Content: system})
 	}
-	p := tea.NewProgram(initialModel(cfg, messages))
-	storage.CreateTable()
-
+	model := initialModel(cfg, messages)
+	defer model.storage.Close()
+	
+	p := tea.NewProgram(model)
+	
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -71,17 +79,16 @@ type model struct {
 	table         table.Model
 	showTable     bool
 	help          string
+	storage       storage.DB
 }
 
-func newTable() table.Model {
-	storage.CreateTable()
+func newTable(prompts []storage.Prompt) table.Model {
 	columns := []table.Column{
 		{Title: "Id", Width: 4},
 		{Title: "Role", Width: 10},
 		{Title: "Prompt", Width: 50},
 		{Title: "Response", Width: 50},
 	}
-	prompts, _ := storage.ReadPrompts()
 	rows := make([]table.Row, 0)
 	for _, p := range prompts {
 		rows = append(rows, table.Row{p.ID, p.Role, p.Prompt, p.Response})
@@ -148,7 +155,7 @@ func newHelp() string {
 }
 
 func savePrompt(message openai.Message, response string) {
-	storage.InsertPrompt(message.Role, message.Content, response)
+
 }
 
 func RenderMessages(messages []openai.Message) string {
@@ -193,7 +200,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Println(m.textarea.Value())
 			return m, tea.Quit
 		case tea.KeyCtrlT:
-			prompts, _ := storage.ReadPrompts()
+			prompts, _ := m.storage.ReadPrompts()
 			rows := make([]table.Row, 0)
 			for _, p := range prompts {
 				rows = append(rows, table.Row{p.ID, p.Role, p.Prompt, p.Response})
@@ -208,7 +215,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if strings.HasPrefix(m.textarea.Value(), "/system") {
 				message := openai.Message{Role: "system", Content: strings.TrimPrefix(m.textarea.Value(), "/system")}
 				m.messages = append(m.messages, message)
-				savePrompt(message, "")
+				m.storage.InsertPrompt(message.Role, message.Content, "")
 				m.viewport.SetContent(RenderMessages(m.messages))
 				m.textarea.Reset()
 				m.viewport.GotoBottom()
@@ -241,7 +248,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if err != nil {
 					return errMsg(err)
 				}
-				savePrompt(m.messages[len(m.messages)-1], response)
+				insertMessage := m.messages[len(m.messages)-1]
+				m.storage.InsertPrompt(insertMessage.Role, insertMessage.Content, response)
 				return completionMsg(response)
 			}
 		}
