@@ -55,11 +55,20 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
+	dbFile := os.Getenv("OPEN_AI_DB_FILE")
+	if dbFile == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		dbFile = fmt.Sprintf("%s/.openai-cli.db", homeDir)
+	}
+
 	return &Config{
 		OpenAiToken:       os.Getenv("OPEN_AI_TOKEN"),
 		OpenAiModel:       os.Getenv("OPEN_AI_MODEL"),
 		OpenAiMaxTokens:   maxTokens,
 		OpenAiTemperature: temperature,
-		DBFile:            "Prompt.db",
+		DBFile:            dbFile,
 	}, nil
 }
