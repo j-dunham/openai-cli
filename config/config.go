@@ -22,7 +22,6 @@ func NewConfig() (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("Loading config from ", homeDir)
 		envPath := fmt.Sprintf("%s/.openai-cli", homeDir)
 		if err := godotenv.Load(envPath); err != nil {
 			return nil, err

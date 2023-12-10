@@ -136,7 +136,7 @@ func newViewport(messages []openai.Message) viewport.Model {
 	content := `Welcome to the OpenAI CLI!
 Type a prompt and press ENTER.`
 	if len(messages) > 0 {
-		content += fmt.Sprintf("\n\n%s", RenderMessages(messages))
+		content += fmt.Sprintf("\n\n%s", RenderMessages(messages, vp.Width))
 	}
 	vp.SetContent(content)
 	return vp
@@ -154,11 +154,7 @@ func newHelp() string {
 	return helpStyle.Render("CTRL+T History Table  | CTRL+W Wipe History | CTRL+C Exit")
 }
 
-func savePrompt(message openai.Message, response string) {
-
-}
-
-func RenderMessages(messages []openai.Message) string {
+func RenderMessages(messages []openai.Message, width int) string {
 	colors := map[string]lipgloss.Style{
 		"user":      lipgloss.NewStyle().Foreground(lipgloss.Color("205")),
 		"assistant": lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
@@ -172,7 +168,7 @@ func RenderMessages(messages []openai.Message) string {
 		if msg.Role == "assistant" {
 			s += "\n"
 		}
-		formatedMsgs = append(formatedMsgs, wordwrap.String(s, 50))
+		formatedMsgs = append(formatedMsgs, wordwrap.String(s, width))
 	}
 	return strings.Join(formatedMsgs, "\n")
 }
@@ -194,6 +190,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.viewport, vpCmd = m.viewport.Update(msg)
 
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.viewport.Width = msg.Width - 2
+		m.viewport.Height = msg.Height - 10
+		m.textarea.SetWidth(msg.Width - 2)
+		m.Update(nil)
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyCtrlC, tea.KeyEsc:
@@ -209,14 +211,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showTable = !m.showTable
 		case tea.KeyCtrlW:
 			m.messages = []openai.Message{}
-			m.viewport.SetContent(RenderMessages(m.messages))
+			m.viewport.SetContent(RenderMessages(m.messages, m.viewport.Width))
 			return m, cmd
 		case tea.KeyEnter:
 			if strings.HasPrefix(m.textarea.Value(), "/system") {
 				message := openai.Message{Role: "system", Content: strings.TrimPrefix(m.textarea.Value(), "/system")}
 				m.messages = append(m.messages, message)
 				m.storage.InsertPrompt(message.Role, message.Content, "")
-				m.viewport.SetContent(RenderMessages(m.messages))
+				m.viewport.SetContent(RenderMessages(m.messages, m.viewport.Width))
 				m.textarea.Reset()
 				m.viewport.GotoBottom()
 				return m, cmd
@@ -232,7 +234,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				prompt := m.textarea.Value()
 				m.messages = append(m.messages, openai.Message{Role: "user", Content: prompt})
 			}
-			m.viewport.SetContent(RenderMessages(m.messages))
+			m.viewport.SetContent(RenderMessages(m.messages, m.viewport.Width))
 			m.textarea.Reset()
 			m.viewport.GotoBottom()
 
@@ -258,7 +260,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case completionMsg:
 		m.messages = append(m.messages, openai.Message{Role: "assistant", Content: string(msg)})
 		m.textarea.Reset()
-		m.viewport.SetContent(RenderMessages(m.messages))
+		m.viewport.SetContent(RenderMessages(m.messages, m.viewport.Width))
 		m.viewport.GotoBottom()
 		m.loading = false
 	case errMsg:
