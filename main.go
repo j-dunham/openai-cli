@@ -191,9 +191,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.viewport.Width = msg.Width - 2
 		m.viewport.Height = msg.Height - 10
-		m.textarea.SetWidth(msg.Width - 2)
 		m.Update(nil)
 		return m, nil
 	case tea.KeyMsg:
