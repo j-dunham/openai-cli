@@ -151,7 +151,7 @@ func newSpinner() spinner.Model {
 
 func newHelp() string {
 	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	return helpStyle.Render("CTRL+T History Table  | CTRL+W Wipe History | CTRL+C Exit")
+	return helpStyle.Render("CTRL+T History Table  | CTRL+W Wipe Context | CTRL+C Exit")
 }
 
 func RenderMessages(messages []openai.Message, width int) string {
